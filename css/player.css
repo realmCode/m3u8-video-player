@@ -40,3 +40,101 @@ body { background: #235; margin: 0; padding: 0; }
   background: #23ade5;       /* match your theme */
   transition: width 0.1s ease;
 }
+
+
+
+/* 1) Make the player always maintain 16:9 (or your chosen) aspect ratio */
+.player {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  /* fallback for older browsers: padding hack */
+  padding-top: 56.25%; /* 9/16*100% */
+  height: 0;
+}
+.player > * {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+}
+
+/* 2) Style both URL fields the same and make them flex nicely */
+.form-control {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 90%;
+  max-width: 800px;
+  margin: 2vh auto;
+}
+.form-control .url,
+.form-control .url1 {
+  flex: 1 1 200px;
+  padding: 0 12px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  background: #347;
+  color: #9bd;
+  min-width: 0; /* allow text-overflow */
+}
+.form-control .url1 {
+  /* optional: a slightly different placeholder color */
+  color: #9bd;
+}
+.form-control .play {
+  flex: 0 0 50px;
+  background: #123 url('../images/play.png') center no-repeat;
+  background-size: 24px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* 3) Tweak the ‘ready’ state to be fluid */
+.ready .logo {
+  display: block;
+  font-size: calc(1.5rem + 4vw);
+}
+.ready .form-control {
+  width: 80%;
+  max-width: 600px;
+}
+.ready .form-control input {
+  height: 3rem;
+}
+.ready .form-control .play {
+  background-size: 36px;
+  width: 3rem;
+}
+
+/* 4) Logo typography scales down on small screens */
+@media (max-width: 640px) {
+  .logo {
+    font-size: calc(1rem + 3vw);
+  }
+  .ready .form-control {
+    width: 95%;
+  }
+}
+
+/* 5) Volume overlay stays above everything */
+.volume-overlay {
+  position: absolute;
+  bottom: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  max-width: 300px;
+  height: 6px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 3px;
+  overflow: hidden;
+  display: none;
+  z-index: 9999;
+}
+.volume-overlay .bar {
+  height: 100%;
+  width: 0%;
+  background: #23ade5;
+  transition: width 0.1s ease;
+}
