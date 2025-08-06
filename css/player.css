@@ -17,3 +17,26 @@ body { background: #235; margin: 0; padding: 0; }
 	.logo { font-size: 30px; }
 	.ready .form-control { width: 90%; padding-top: 5vh; }
 } 
+
+/* Volume overlay container */
+.volume-overlay {
+  position: absolute;
+  bottom: 80px;              /* adjust above controls */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 6px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 3px;
+  overflow: hidden;
+  display: none;
+  z-index: 9999;
+}
+
+/* The filled bar */
+.volume-overlay .bar {
+  height: 100%;
+  width: 0%;
+  background: #23ade5;       /* match your theme */
+  transition: width 0.1s ease;
+}
