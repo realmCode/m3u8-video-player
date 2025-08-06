@@ -10,17 +10,18 @@
 	<div class="player">loading...</div>
 	<div class="logo">M3U8 Video Player</div>
 	<form class="form-control">
-		<input class="url" type="text" placeholder="Please enter the m3u8 video URL" value="http://127.0.0.1:8000/proxy.m3u8?url=https%3A%2F%2Fdm.1024tera.com%2Fshare%2Fstreaming%3Fuk%3D4398109113727%26shareid%3D26079822115%26type%3DM3U8_AUTO_720%26fid%3D872863199098385%26sign%3D59d2eb825eab61f17e5fb3e762a7655b5685401f%26timestamp%3D1754293971%26jsToken%3DBD0CA6CA2F32C3A6A4A633C1F3F6391ADCCDEBF07958D98F507F76BD798671DF7796596378FCFABD26F1ADEDB512CC79B29A09A87B8CDF7A301F7C0FC2C5D9F5%26esl%3D1%26isplayer%3D1%26ehps%3D1%26clienttype%3D0%26app_id%3D250528%26web%3D1%26channel%3Ddubox" />
-		<input class="url1" type="text" placeholder="Please enter the m3u8 subtitle URL" value="http://127.0.0.1:8000/proxy.m3u8?url=https%3A%2F%2Fdm.1024tera.com%2Fshare%2Fstreaming%3Fapp_id%3D250528%26web%3D1%26channel%3Ddubox%26clienttype%3D0%26jsToken%3DBD0CA6CA2F32C3A6A4A633C1F3F6391ADCCDEBF07958D98F507F76BD798671DF7796596378FCFABD26F1ADEDB512CC79B29A09A87B8CDF7A301F7C0FC2C5D9F5%26sign%3D79bc2bd84dc61ae17c45a736837cd06fc59018e8%26timestamp%3D1754301623%26uk%3D4398109113727%26shareid%3D26079822115%26fid%3D872863199098385%26esl%3D1%26isplayer%3D1%26ehps%3D1%26type%3DM3U8_SUBTITLE_SRT" />
+		<input class="url a" type="text" placeholder="Please enter the m3u8 video URL" value="http://127.0.0.1:8000/proxy.m3u8?url=https%3A%2F%2Fdm.1024tera.com%2Fshare%2Fstreaming%3Fuk%3D4398109113727%26shareid%3D26079822115%26type%3DM3U8_AUTO_720%26fid%3D872863199098385%26sign%3D59d2eb825eab61f17e5fb3e762a7655b5685401f%26timestamp%3D1754293971%26jsToken%3DBD0CA6CA2F32C3A6A4A633C1F3F6391ADCCDEBF07958D98F507F76BD798671DF7796596378FCFABD26F1ADEDB512CC79B29A09A87B8CDF7A301F7C0FC2C5D9F5%26esl%3D1%26isplayer%3D1%26ehps%3D1%26clienttype%3D0%26app_id%3D250528%26web%3D1%26channel%3Ddubox" />
+		<input class="url b" type="text" placeholder="Please enter the m3u8 subtitle URL" value="http://127.0.0.1:8000/proxy.m3u8?url=https%3A%2F%2Fdm.1024tera.com%2Fshare%2Fstreaming%3Fapp_id%3D250528%26web%3D1%26channel%3Ddubox%26clienttype%3D0%26jsToken%3DBD0CA6CA2F32C3A6A4A633C1F3F6391ADCCDEBF07958D98F507F76BD798671DF7796596378FCFABD26F1ADEDB512CC79B29A09A87B8CDF7A301F7C0FC2C5D9F5%26sign%3D79bc2bd84dc61ae17c45a736837cd06fc59018e8%26timestamp%3D1754301623%26uk%3D4398109113727%26shareid%3D26079822115%26fid%3D872863199098385%26esl%3D1%26isplayer%3D1%26ehps%3D1%26type%3DM3U8_SUBTITLE_SRT" />
 		<input class="play" type="submit" value="" title="Click to play" />
 	</form>
 </div>
 <script src="js/jquery.min.js"></script>
 <script src="js/layer/layer.min.js"></script>
-<script src="js/artplayer/artplayer.js"></script>
-<script src="js/artplayer/artplayer-plugin-control.js"></script>
-<script src="js/artplayer/hls.min.js"></script>
-<script src="js/artplayer/artplayer-plugin-hls-quality.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/artplayer/5.2.5/artplayer.js" integrity="sha512-5xEATX8FUXwwIqHvvrrDQy+pEW/r5vl9JFy4shzhXE7pKPwJyI07FFhYQHzDDqJJGlH6+MR+X6gXUhCxhmnA0Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/artplayer-plugin-control@2.0.0/dist/artplayer-plugin-control.min.js"></script> -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.17/hls.min.js"></script>
+<!-- <script src="js/artplayer/artplayer-plugin-hls-quality.js"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/artplayer-plugin-hls-control@1.0.1/dist/artplayer-plugin-hls-control.min.js"></script>
 <script src="https://artplayer.org/uncompiled/artplayer-plugin-multiple-subtitles/index.js"></script>
 
 <script src="js/player.js"></script>

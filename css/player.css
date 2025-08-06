@@ -40,3 +40,4 @@ body { background: #235; margin: 0; padding: 0; }
   background: #23ade5;       /* match your theme */
   transition: width 0.1s ease;
 }
+/* make the floating control bar centered and fully visible */
