@@ -202,14 +202,15 @@ async function playVideo(videoUrl, subtitles) {
   // Artplayer.MOBILE_DBCLICK_PLAY = false;
   class doubleClick {
     dblclick() {
-        const now = Date.now();
-        const result = this.timestamp && now - this.timestamp <= Artplayer.DBCLICK_TIME;
-        this.timestamp = now;
-        return result;
+      const now = Date.now();
+      const result =
+        this.timestamp && now - this.timestamp <= Artplayer.DBCLICK_TIME;
+      this.timestamp = now;
+      return result;
     }
-}
+  }
 
-const ldb = new doubleClick();
+  const ldb = new doubleClick();
   art = new Artplayer({
     container: ".player",
     url: videoUrl,
@@ -220,6 +221,8 @@ const ldb = new doubleClick();
     aspectRatio: true,
     screenshot: true,
     setting: true,
+    hotkey: true,
+    gesture: true,
     pip: true,
     fullscreenWeb: true,
     fullscreen: true,
@@ -243,24 +246,40 @@ const ldb = new doubleClick();
         auto: "Auto",
       }),
     ],
-    settings: [
-      subtitleSetting,
-    ],
+    settings: [subtitleSetting],
     layers: [
       {
         html: "",
         style: {
           position: "absolute",
+          top: "50%",
           left: 0,
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: "33%",
-          height: "100%",
+          transform: "translateY(-50%)",
+          width: "25%",
+          height: "25%",
+          // backgroundColor: "red",
+          // color: "red",
         },
         disable: !Artplayer.utils.isMobile,
         click: function () {
           if (ldb.dblclick()) art.backward = Artplayer.SEEK_STEP;
+        },
+      },
+      {
+        html: "",
+        style: {
+          position: "absolute",
+          top: "50%",
+          right: 0,
+          transform: "translateY(-50%)",
+          width: "25%",
+          height: "25%",
+          // backgroundColor: "red",
+          // color: "red",
+        },
+        disable: !Artplayer.utils.isMobile,
+        click: function () {
+          if (ldb.dblclick()) art.forward = Artplayer.SEEK_STEP;
         },
       },
     ],
@@ -288,57 +307,68 @@ const ldb = new doubleClick();
 }
 
 function playM3u8(video, url, art) {
-  if (Hls.isSupported()) {
-    // 1) configure Hls.js for smoother audio/video
-    const hls = new Hls({
-      maxBufferLength: 30, // try to keep 30s in buffer
-      maxMaxBufferLength: 60, // cap at 60s buffer
-      maxBufferHole: 0.5, // allow small gaps
-      lowBufferWatchdogPeriod: 0.5, // check buffer more often
-      enableWorker: true, // offload demuxing to worker
-      enableSoftwareAES: true, // in case of encrypted streams
-    });
-
-    // 2) wire Hls into Artplayer
-    art.hls = hls;
-    hls.loadSource(url);
-    hls.attachMedia(video);
-
-    // 3) automatic error recovery
-    hls.on(Hls.Events.ERROR, (event, data) => {
-      console.warn("HLS error", data);
-      if (data.fatal) {
-        switch (data.type) {
-          case Hls.ErrorTypes.NETWORK_ERROR:
-            // try to recover network error
-            console.warn("Network error – retrying");
-            hls.startLoad();
-            break;
-          case Hls.ErrorTypes.MEDIA_ERROR:
-            // try to recover media error
-            console.warn("Media error – recovering");
-            hls.recoverMediaError();
-            break;
-          default:
-            // cannot recover
-            console.error("Unrecoverable error – destroying HLS");
-            hls.destroy();
-            break;
-        }
-      }
-    });
-
-    // 4) cleanup when Artplayer is destroyed
-    art.once("destroy", () => {
-      hls.destroy();
-    });
-  } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-    // native HLS fallback
-    video.src = url;
-    video.addEventListener("loadedmetadata", () => {
-      video.play();
-    });
-  } else {
-    art.notice.show = "Unsupported playback format: m3u8";
+  if (!Hls.isSupported()) {
+    if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = url;
+      video.addEventListener("loadedmetadata", () => video.play());
+    } else {
+      art.notice.show = "Unsupported playback format: m3u8";
+    }
+    return;
   }
+
+  const hls = new Hls({
+    enableWorker:            true,
+    maxBufferLength:         60,
+    maxMaxBufferLength:      120,
+    maxBufferHole:           0.2,   // allow up to 200 ms gaps
+    lowBufferWatchdogPeriod: 0.5,
+    highBufferWatchdogPeriod:3,
+    liveSyncDurationCount:   2,
+    liveMaxLatencyDurationCount: 3,
+    fragLoadingTimeOut:      30_000,
+    fragLoadingMaxRetry:     8,
+    fragLoadingRetryDelay:   1_000,
+    fragLoadingMaxRetryTimeout: 120_000,
+    startPosition:           -1,    // buffer from live edge
+    capLevelOnFPSDrop:       true,
+    abrEwmaFastLive:         3.5,
+    abrEwmaSlowLive:         9,
+    abrEwmaDefaultEstimate:  500_000,
+    enableSoftwareAES:       true,
+    nudgeOffset:             0.2,
+    nudgeMaxRetry:           5,
+    // if your stream is audio-only, bump render nudge:
+    audioBufferNudgeMaxRetry: 5,
+  });
+
+  art.hls = hls;
+  hls.loadSource(url);
+  hls.attachMedia(video);
+
+  // lock audio track to avoid mid-stream level changes
+  hls.on(Hls.Events.MANIFEST_PARSED, () => {
+    hls.autoLevelEnabled = false;
+    hls.audioTrack = 0;  
+  });
+
+  // error recovery
+  hls.on(Hls.Events.ERROR, (evt, data) => {
+    const { type, details, fatal } = data;
+    console.warn("HLS error", type, details, "fatal=", fatal);
+    if (!fatal) return;
+
+    switch (type) {
+      case Hls.ErrorTypes.NETWORK_ERROR:
+        hls.startLoad();
+        break;
+      case Hls.ErrorTypes.MEDIA_ERROR:
+        hls.recoverMediaError();
+        break;
+      default:
+        hls.destroy();
+    }
+  });
+
+  art.once("destroy", () => hls.destroy());
 }
