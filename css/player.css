@@ -1,15 +1,25 @@
-body { background: #000; margin: 0; padding: 0; overflow: hidden; }
-.player { width: 100vw; height: 100vh; color: #fff; text-align: center; }
+body {
+  background: #000;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.player {
+  width: 100vw;
+  height: 100dvh;
+  color: #fff;
+  text-align: center;
+}
 
 /* Volume overlay container */
 .volume-overlay {
   position: absolute;
-  bottom: 80px;              /* adjust above controls */
+  bottom: 80px; /* adjust above controls */
   left: 50%;
   transform: translateX(-50%);
   width: 200px;
   height: 6px;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 3px;
   overflow: hidden;
   display: none;
@@ -20,6 +30,6 @@ body { background: #000; margin: 0; padding: 0; overflow: hidden; }
 .volume-overlay .bar {
   height: 100%;
   width: 0%;
-  background: #23ade5;       /* match your theme */
+  background: #23ade5; /* match your theme */
   transition: width 0.1s ease;
 }
