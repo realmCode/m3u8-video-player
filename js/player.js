@@ -1,8 +1,4 @@
-let demo_video_url = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
-
 var art;
-var video_url = "",
-  subtitle_url = "";
 
 $(document).ready(function () {
   const hash = window.location.hash.slice(1); // drop the leading ‘#’
@@ -10,7 +6,10 @@ $(document).ready(function () {
   const videoUrl = params.get("video_url");
   const subtitleUrl = params.get("subtitle_url");
 
-  if (!videoUrl) return;
+  if (!videoUrl) {
+      $(".player").html("No video URL found in the URL hash. Append #video_url=YOUR_URL to the current URL.");
+      return;
+  }
 
   // wrap the async work in an IIFE
   (async () => {
@@ -29,7 +28,7 @@ $(document).ready(function () {
 
 // — helper: turn `k=v,a=b,…` into {k:v, a:b,…} —
 function parseAttributes(attrString) {
-  const re = /([A-Z0-9\-]+)=("(?:[^"\\]|\\.)*"|[^,]*)/g;
+  const re = /([A-Z0-9\-]+)=(\"(?:[^\"\\]|\\.)*\"|[^,]*)/g;
   const attrs = {};
   let m;
   while ((m = re.exec(attrString))) {
@@ -91,53 +90,8 @@ async function fetchSubtitleTracks(m3u8Url) {
   return tracks;
 }
 
-// let art;
-// let video_url = "", subtitle_url = "";
-
-$(".form-control").on("submit", async function (e) {
-  e.preventDefault();
-
-  const tmpV = $(".form-control>.url.a").val().trim();
-  const tmpS = $(".form-control>.url.b").val().trim();
-
-  if (!tmpV) {
-    layer.msg("Please enter video URL");
-    return false;
-  }
-
-  if (video_url === tmpV && subtitle_url === tmpS) {
-    layer.msg("URLs unchanged, resuming");
-    art.play();
-    return false;
-  }
-
-  layer.msg("Loading…");
-  video_url = tmpV;
-  subtitle_url = tmpS;
-
-  // 1) update the URL hash so on reload/bookmark it will auto-play
-  const params = new URLSearchParams({ video_url: tmpV, subtitle_url: tmpS });
-  if (tmpS) params.set("subtitle_url", tmpS);
-  window.location.hash = params.toString();
-
-  // 2) fetch subtitles if supplied
-  let subtitles = [];
-  if (subtitle_url) {
-    try {
-      subtitles = await fetchSubtitleTracks(subtitle_url);
-    } catch (err) {
-      console.error("subtitle load failed", err);
-    }
-  }
-
-  console.log("subtitles:", subtitles);
-
-  // 3) actually play
-  await playVideo(video_url, subtitles);
-});
 
 async function playVideo(videoUrl, subtitles) {
-  $(".main").removeClass("ready");
   console.log(subtitles);
   art?.destroy();
 
@@ -197,9 +151,9 @@ async function playVideo(videoUrl, subtitles) {
       return item.html;
     },
   };
-  // Artplayer.DBCLICK_TIME = 300;
-  // Artplayer.MOBILE_CLICK_PLAY = true;
-  // Artplayer.MOBILE_DBCLICK_PLAY = false;
+  Artplayer.DBCLICK_TIME = 300;
+  Artplayer.MOBILE_CLICK_PLAY = true;
+  Artplayer.MOBILE_DBCLICK_PLAY = false;
   class doubleClick {
     dblclick() {
       const now = Date.now();
@@ -319,27 +273,27 @@ function playM3u8(video, url, art) {
 
   const hls = new Hls({
     enableWorker:            true,
-    maxBufferLength:         60,
-    maxMaxBufferLength:      120,
-    maxBufferHole:           0.2,   // allow up to 200 ms gaps
-    lowBufferWatchdogPeriod: 0.5,
-    highBufferWatchdogPeriod:3,
+    maxBufferLength:         30,
+    maxMaxBufferLength:      600,
+    maxBufferSize:           60 * 1000 * 1000,
+    maxBufferHole:           0.5,
+    lowBufferWatchdogPeriod: 2,
+    highBufferWatchdogPeriod:5,
     liveSyncDurationCount:   2,
     liveMaxLatencyDurationCount: 3,
-    fragLoadingTimeOut:      30_000,
-    fragLoadingMaxRetry:     8,
-    fragLoadingRetryDelay:   1_000,
-    fragLoadingMaxRetryTimeout: 120_000,
-    startPosition:           -1,    // buffer from live edge
+    fragLoadingTimeOut:      20000,
+    fragLoadingMaxRetry:     6,
+    fragLoadingRetryDelay:   1000,
+    fragLoadingMaxRetryTimeout: 64000,
+    startPosition:           -1,
     capLevelOnFPSDrop:       true,
-    abrEwmaFastLive:         3.5,
-    abrEwmaSlowLive:         9,
-    abrEwmaDefaultEstimate:  500_000,
+    abrEwmaFastLive:         3.0,
+    abrEwmaSlowLive:         9.0,
+    abrEwmaDefaultEstimate:  500000,
     enableSoftwareAES:       true,
-    nudgeOffset:             0.2,
-    nudgeMaxRetry:           5,
-    // if your stream is audio-only, bump render nudge:
-    audioBufferNudgeMaxRetry: 5,
+    nudgeOffset:             0.1,
+    nudgeMaxRetry:           3,
+    maxStarvationDelay:      4,
   });
 
   art.hls = hls;
@@ -348,8 +302,7 @@ function playM3u8(video, url, art) {
 
   // lock audio track to avoid mid-stream level changes
   hls.on(Hls.Events.MANIFEST_PARSED, () => {
-    hls.autoLevelEnabled = false;
-    hls.audioTrack = 0;  
+    hls.autoLevelEnabled = true;
   });
 
   // error recovery

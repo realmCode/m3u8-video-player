@@ -3,23 +3,17 @@
 <head>
 <title>M3U8 Video Player</title>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 <link rel="stylesheet" href="css/player.css" />
 <body>
-<div class="main ready">
-	<div class="player">loading...</div>
-	<div class="logo">M3U8 Video Player</div>
-	<form class="form-control">
-		<input class="url a" type="text" placeholder="Please enter the m3u8 video URL" value="http://localhost:8000/proxy.m3u8?url=https%3A%2F%2Fdm.1024tera.com%2Fshare%2Fstreaming%3Fuk%3D4399367533236%26shareid%3D57776558697%26type%3DM3U8_AUTO_720%26fid%3D631658554163599%26sign%3Db682899984863e12bdf2383835ebbac73935f3c3%26timestamp%3D1754504245%26jsToken%3DBD0CA6CA2F32C3A6A4A633C1F3F6391A7AC984CF63102914E27C82F100B74F9128C71C91972604AA208371E4246D57AF7B6B22289B67D77FA3A12811CFE62640%26esl%3D1%26isplayer%3D1%26ehps%3D1%26clienttype%3D0%26app_id%3D250528%26web%3D1%26channel%3Ddubox" />
-		<input class="url b" type="text" placeholder="Please enter the m3u8 subtitle URL" value="http://localhost:8000/proxy.m3u8?url=https%3A%2F%2Fdm.1024tera.com%2Fshare%2Fstreaming%3Fapp_id%3D250528%26web%3D1%26channel%3Ddubox%26clienttype%3D0%26jsToken%3DBD0CA6CA2F32C3A6A4A633C1F3F6391A7AC984CF63102914E27C82F100B74F9128C71C91972604AA208371E4246D57AF7B6B22289B67D77FA3A12811CFE62640%26sign%3Db682899984863e12bdf2383835ebbac73935f3c3%26timestamp%3D1754504245%26uk%3D4399367533236%26shareid%3D57776558697%26fid%3D631658554163599%26esl%3D1%26isplayer%3D1%26ehps%3D1%26type%3DM3U8_SUBTITLE_SRT" />
-		<input class="play" type="submit" value="" title="Click to play" />
-	</form>
-</div>
+<div class="player">loading...</div>
 <script src="js/jquery.min.js"></script>
 <script src="js/layer/layer.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/artplayer/5.2.5/artplayer.js" integrity="sha512-5xEATX8FUXwwIqHvvrrDQy+pEW/r5vl9JFy4shzhXE7pKPwJyI07FFhYQHzDDqJJGlH6+MR+X6gXUhCxhmnA0Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://artplayer.org/compiled/artplayer.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <!-- <script src="https://cdn.jsdelivr.net/npm/artplayer-plugin-control@2.0.0/dist/artplayer-plugin-control.min.js"></script> -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.17/hls.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hl
+s.js/1.5.17/hls.min.js"></script>
 <!-- <script src="js/artplayer/artplayer-plugin-hls-quality.js"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/artplayer-plugin-hls-control@1.0.1/dist/artplayer-plugin-hls-control.min.js"></script>
 <script src="https://artplayer.org/uncompiled/artplayer-plugin-multiple-subtitles/index.js"></script>
