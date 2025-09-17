@@ -38,3 +38,8 @@ body {
   background: #23ade5; /* match your theme */
   transition: width 0.1s ease;
 }
+.art-subtitle {
+    font-size: clamp(14px, 2.5vw, 32px)  !important;
+    color: #fff;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}

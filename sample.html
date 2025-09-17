@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<title>M3U8 Video Player</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<link rel="stylesheet" href="css/player.css" />
+<style>
+    body {
+        background-color: #f0f0f0;
+        padding: 0;
+        margin: 0;
+    }
+    .container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1rem;
+        padding: 1rem;
+    }
+    .player-container {
+        position: relative;
+        padding-top: 56.25%; /* 16:9 aspect ratio */
+        height: 0;
+        overflow: hidden;
+    }
+    .player-container iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="player-container">
+        <iframe src="http://10.125.242.162:5500/#video_url=https://teradl.kingx.dev/proxy.m3u8?url=q4WTPnv-jndiLGv-sipsN9WS1s2zPsi8Hzyu07SQSP7zO2aK-Ghk4bBDO049D_qSGT3gk67-mnWNlxibtEz5e-vpBFGcfsvlUdIuE9P71PYj2tQVxKSei_Oq33obTyafHeEWioM4yDLRJWWHteMb4A41ET6zHvEFWXSEn8ERdyRvlArSRCUly4oFEFrkQVwHqDU_bmyzSJq9vuk5_rw9AONBLkLSmGQEokq47bLhwOEkpPc38oSlRh3mdwFvll9RqwMjK8xdIbzdqgXcGvAke3_VA3JPg0D_4JoLFh8wcBVUlnAF2a9byAXriIpiCh4mG4j-PweSqOl_Accd15V4fQ4xhzkoh3tfXIY0icrwWgQvbw6fsUEU4rV1FJ_nVdoFW2KGI0GWHY3ZyV-4rnPUg67pi9bXYfCSb18xLJiJ7tlkmRvfHKy8XTZ1B3Vbualc_2xJ21PYO2NIoSPdOtxRQfaww0xPOxTKow45R1geJOBCR90_cqanNvFErVLNR4ZrNuRNI8pRmYEIBGjZA68k8hdBkUGZG59g1g4ws5WX5uMOJk1NdWQii0722PQDIBORGQ==&subtitle_url=https://teradl.kingx.dev/proxy.m3u8?url=eCjE-RLzhTwSan6hdNrcENj8WtBHqWNV8YtocspS75Wm5Fjua1Mbxr2FDByRX6nhEZ1CzBJiI6NEoTkHKxEuV2DTgsQiag8iRMTW5mUj-bYH0lL2jDro0gyPiOru3WNXrv01QUFgcC1UX0EIgEVChHfxbcxf3K4r4qPUuRySIlaVM6ZM-r4THlx_ygUP_87lS6TmQhFpLl6ouLYYxjLEKjF0i6OZFgwSDSyH4zDZB0_L--ZXi9366qfDz7y0s4phclCX4tHGMxc47-E75k8BjMsJ3toJY-6taw-tpUM2bR8LTOBZPoqBXLFh_4uqoE7taYCxoSvBqJA2VSKPleeHbsv1ix2Wm9MpRO8CT3Qul1btG2zitHKUb2qVnBcQYNSvMH5O5aYZz12W2nCNFsbl3eQgHS6GC_D2B_JOXGV23wCnas2D-zj5ccytYwI89cdxbZVqIPF_4Xfxws31i-W_BcwfGHKLXK6gWbbH5Edn922O4kgkBvDd06eta6PSgfxYW0tFoREPPpNIkxJvDD9tO-O2yUevTbmDJ96gLR8KGCPXPIdhheTiFZ6bqa95Pi4DxpFa1pI=" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>
+    <div class="player-container">
+        <iframe src="http://10.125.242.162:5500/#video_url=https://teradl.kingx.dev/proxy.m3u8?url=q4WTPnv-jndiLGv-sipsN9WS1s2zPsi8Hzyu07SQSP7zO2aK-Ghk4bBDO049D_qSGT3gk67-mnWNlxibtEz5e-vpBFGcfsvlUdIuE9P71PYj2tQVxKSei_Oq33obTyafHeEWioM4yDLRJWWHteMb4A41ET6zHvEFWXSEn8ERdyRvlArSRCUly4oFEFrkQVwHqDU_bmyzSJq9vuk5_rw9AONBLkLSmGQEokq47bLhwOEkpPc38oSlRh3mdwFvll9RqwMjK8xdIbzdqgXcGvAke3_VA3JPg0D_4JoLFh8wcBVUlnAF2a9byAXriIpiCh4mG4j-PweSqOl_Accd15V4fQ4xhzkoh3tfXIY0icrwWgQvbw6fsUEU4rV1FJ_nVdoFW2KGI0GWHY3ZyV-4rnPUg67pi9bXYfCSb18xLJiJ7tlkmRvfHKy8XTZ1B3Vbualc_2xJ21PYO2NIoSPdOtxRQfaww0xPOxTKow45R1geJOBCR90_cqanNvFErVLNR4ZrNuRNI8pRmYEIBGjZA68k8hdBkUGZG59g1g4ws5WX5uMOJk1NdWQii0722PQDIBORGQ==&subtitle_url=https://teradl.kingx.dev/proxy.m3u8?url=eCjE-RLzhTwSan6hdNrcENj8WtBHqWNV8YtocspS75Wm5Fjua1Mbxr2FDByRX6nhEZ1CzBJiI6NEoTkHKxEuV2DTgsQiag8iRMTW5mUj-bYH0lL2jDro0gyPiOru3WNXrv01QUFgcC1UX0EIgEVChHfxbcxf3K4r4qPUuRySIlaVM6ZM-r4THlx_ygUP_87lS6TmQhFpLl6ouLYYxjLEKjF0i6OZFgwSDSyH4zDZB0_L--ZXi9366qfDz7y0s4phclCX4tHGMxc47-E75k8BjMsJ3toJY-6taw-tpUM2bR8LTOBZPoqBXLFh_4uqoE7taYCxoSvBqJA2VSKPleeHbsv1ix2Wm9MpRO8CT3Qul1btG2zitHKUb2qVnBcQYNSvMH5O5aYZz12W2nCNFsbl3eQgHS6GC_D2B_JOXGV23wCnas2D-zj5ccytYwI89cdxbZVqIPF_4Xfxws31i-W_BcwfGHKLXK6gWbbH5Edn922O4kgkBvDd06eta6PSgfxYW0tFoREPPpNIkxJvDD9tO-O2yUevTbmDJ96gLR8KGCPXPIdhheTiFZ6bqa95Pi4DxpFa1pI=" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>
+    <div class="player-container">
+        <iframe src="http://10.125.242.162:5500/#video_url=https://teradl.kingx.dev/proxy.m3u8?url=q4WTPnv-jndiLGv-sipsN9WS1s2zPsi8Hzyu07SQSP7zO2aK-Ghk4bBDO049D_qSGT3gk67-mnWNlxibtEz5e-vpBFGcfsvlUdIuE9P71PYj2tQVxKSei_Oq33obTyafHeEWioM4yDLRJWWHteMb4A41ET6zHvEFWXSEn8ERdyRvlArSRCUly4oFEFrkQVwHqDU_bmyzSJq9vuk5_rw9AONBLkLSmGQEokq47bLhwOEkpPc38oSlRh3mdwFvll9RqwMjK8xdIbzdqgXcGvAke3_VA3JPg0D_4JoLFh8wcBVUlnAF2a9byAXriIpiCh4mG4j-PweSqOl_Accd15V4fQ4xhzkoh3tfXIY0icrwWgQvbw6fsUEU4rV1FJ_nVdoFW2KGI0GWHY3ZyV-4rnPUg67pi9bXYfCSb18xLJiJ7tlkmRvfHKy8XTZ1B3Vbualc_2xJ21PYO2NIoSPdOtxRQfaww0xPOxTKow45R1geJOBCR90_cqanNvFErVLNR4ZrNuRNI8pRmYEIBGjZA68k8hdBkUGZG59g1g4ws5WX5uMOJk1NdWQii0722PQDIBORGQ==&subtitle_url=https://teradl.kingx.dev/proxy.m3u8?url=eCjE-RLzhTwSan6hdNrcENj8WtBHqWNV8YtocspS75Wm5Fjua1Mbxr2FDByRX6nhEZ1CzBJiI6NEoTkHKxEuV2DTgsQiag8iRMTW5mUj-bYH0lL2jDro0gyPiOru3WNXrv01QUFgcC1UX0EIgEVChHfxbcxf3K4r4qPUuRySIlaVM6ZM-r4THlx_ygUP_87lS6TmQhFpLl6ouLYYxjLEKjF0i6OZFgwSDSyH4zDZB0_L--ZXi9366qfDz7y0s4phclCX4tHGMxc47-E75k8BjMsJ3toJY-6taw-tpUM2bR8LTOBZPoqBXLFh_4uqoE7taYCxoSvBqJA2VSKPleeHbsv1ix2Wm9MpRO8CT3Qul1btG2zitHKUb2qVnBcQYNSvMH5O5aYZz12W2nCNFsbl3eQgHS6GC_D2B_JOXGV23wCnas2D-zj5ccytYwI89cdxbZVqIPF_4Xfxws31i-W_BcwfGHKLXK6gWbbH5Edn922O4kgkBvDd06eta6PSgfxYW0tFoREPPpNIkxJvDD9tO-O2yUevTbmDJ96gLR8KGCPXPIdhheTiFZ6bqa95Pi4DxpFa1pI=" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>
+    <div class="player-container">
+        <iframe src="http://10.125.242.162:5500/#video_url=https://teradl.kingx.dev/proxy.m3u8?url=q4WTPnv-jndiLGv-sipsN9WS1s2zPsi8Hzyu07SQSP7zO2aK-Ghk4bBDO049D_qSGT3gk67-mnWNlxibtEz5e-vpBFGcfsvlUdIuE9P71PYj2tQVxKSei_Oq33obTyafHeEWioM4yDLRJWWHteMb4A41ET6zHvEFWXSEn8ERdyRvlArSRCUly4oFEFrkQVwHqDU_bmyzSJq9vuk5_rw9AONBLkLSmGQEokq47bLhwOEkpPc38oSlRh3mdwFvll9RqwMjK8xdIbzdqgXcGvAke3_VA3JPg0D_4JoLFh8wcBVUlnAF2a9byAXriIpiCh4mG4j-PweSqOl_Accd15V4fQ4xhzkoh3tfXIY0icrwWgQvbw6fsUEU4rV1FJ_nVdoFW2KGI0GWHY3ZyV-4rnPUg67pi9bXYfCSb18xLJiJ7tlkmRvfHKy8XTZ1B3Vbualc_2xJ21PYO2NIoSPdOtxRQfaww0xPOxTKow45R1geJOBCR90_cqanNvFErVLNR4ZrNuRNI8pRmYEIBGjZA68k8hdBkUGZG59g1g4ws5WX5uMOJk1NdWQii0722PQDIBORGQ==&subtitle_url=https://teradl.kingx.dev/proxy.m3u8?url=eCjE-RLzhTwSan6hdNrcENj8WtBHqWNV8YtocspS75Wm5Fjua1Mbxr2FDByRX6nhEZ1CzBJiI6NEoTkHKxEuV2DTgsQiag8iRMTW5mUj-bYH0lL2jDro0gyPiOru3WNXrv01QUFgcC1UX0EIgEVChHfxbcxf3K4r4qPUuRySIlaVM6ZM-r4THlx_ygUP_87lS6TmQhFpLl6ouLYYxjLEKjF0i6OZFgwSDSyH4zDZB0_L--ZXi9366qfDz7y0s4phclCX4tHGMxc47-E75k8BjMsJ3toJY-6taw-tpUM2bR8LTOBZPoqBXLFh_4uqoE7taYCxoSvBqJA2VSKPleeHbsv1ix2Wm9MpRO8CT3Qul1btG2zitHKUb2qVnBcQYNSvMH5O5aYZz12W2nCNFsbl3eQgHS6GC_D2B_JOXGV23wCnas2D-zj5ccytYwI89cdxbZVqIPF_4Xfxws31i-W_BcwfGHKLXK6gWbbH5Edn922O4kgkBvDd06eta6PSgfxYW0tFoREPPpNIkxJvDD9tO-O2yUevTbmDJ96gLR8KGCPXPIdhheTiFZ6bqa95Pi4DxpFa1pI=" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>
+</div>
+
+</body>
+</html>
