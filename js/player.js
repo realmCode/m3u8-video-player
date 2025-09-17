@@ -195,7 +195,7 @@ async function playVideo(videoUrl, subtitles) {
     highlight: [{ time: 15, text: "Welcome to m3u8 player" }],
     icons: {
       loading:
-        '<img src="images/loading.gif" width="100px" title="Video loading..." />',
+        '<img src="images/loading.gif" class="loading-gif" title="Video loading..." />',
     },
     customType: { m3u8: playM3u8 },
     plugins: [

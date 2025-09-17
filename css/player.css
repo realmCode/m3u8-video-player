@@ -11,6 +11,11 @@ body {
   text-align: center;
 }
 
+.loading-gif {
+    width: clamp(50px, 10vw, 100px);
+    height: auto;
+}
+
 /* Volume overlay container */
 .volume-overlay {
   position: absolute;
