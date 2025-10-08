@@ -268,10 +268,15 @@ async function playVideo(videoUrl, subtitles) {
 }
 
 function playM3u8(video, url, art) {
-  if (!Hls.isSupported()) {
+  // Native HLS (Safari / iOS)
+  if (!window.Hls || !Hls.isSupported()) {
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.crossOrigin = "anonymous";
+      video.playbackRate = 1;
+      if ("preservesPitch" in video) video.preservesPitch = true;
+      if ("mozPreservesPitch" in video) video.mozPreservesPitch = true;
       video.src = url;
-      video.addEventListener("loadedmetadata", () => video.play());
+      video.addEventListener("loadedmetadata", () => video.play().catch(()=>{}));
     } else {
       art.notice.show = "Unsupported playback format: m3u8";
     }
@@ -279,56 +284,154 @@ function playM3u8(video, url, art) {
   }
 
   const hls = new Hls({
-    enableWorker:            true,
-    maxBufferLength:         30,
-    maxMaxBufferLength:      600,
-    maxBufferSize:           60 * 1000 * 1000,
-    maxBufferHole:           0.5,
-    lowBufferWatchdogPeriod: 2,
-    highBufferWatchdogPeriod:5,
-    liveSyncDurationCount:   2,
-    liveMaxLatencyDurationCount: 3,
-    fragLoadingTimeOut:      20000,
-    fragLoadingMaxRetry:     6,
-    fragLoadingRetryDelay:   1000,
+    enableWorker: true,
+    lowLatencyMode: false,         // keep it stable
+    backBufferLength: 30,
+    // sane buffers (don’t make tiny holes)
+    maxBufferLength: 30,
+    maxMaxBufferLength: 120,
+    maxBufferSize: 60 * 1000 * 1000,
+    // retries
+    fragLoadingTimeOut: 20000,
+    fragLoadingMaxRetry: 6,
+    fragLoadingRetryDelay: 1000,
     fragLoadingMaxRetryTimeout: 64000,
-    startPosition:           -1,
-    capLevelOnFPSDrop:       true,
-    abrEwmaFastLive:         3.0,
-    abrEwmaSlowLive:         9.0,
-    abrEwmaDefaultEstimate:  500000,
-    enableSoftwareAES:       true,
-    nudgeOffset:             0.1,
-    nudgeMaxRetry:           3,
-    maxStarvationDelay:      4,
+    capLevelToPlayerSize: true,
   });
 
   art.hls = hls;
-  hls.loadSource(url);
   hls.attachMedia(video);
+  hls.loadSource(url);
 
-  // lock audio track to avoid mid-stream level changes
-  hls.on(Hls.Events.MANIFEST_PARSED, () => {
-    hls.autoLevelEnabled = true;
+  // pin state
+  let pinnedAudioTrack = null;
+  let pinnedLevel = null;       // index into hls.levels
+  let triedLevels = new Set();
+
+  // choose a stable audio track and a single good level, then disable ABR
+  hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
+    const levels = hls.levels || [];
+    // pick a “good” level:
+    // 1) prefer one that advertises an AAC codec (e.g., mp4a.40.2)
+    // 2) else pick median bitrate to avoid extremes
+    let idx = -1;
+    for (let i = 0; i < levels.length; i++) {
+      const ac = (levels[i].audioCodec || "").toLowerCase();
+      if (ac.includes("mp4a")) { idx = i; break; }
+    }
+    if (idx === -1 && levels.length) idx = Math.floor(levels.length / 2);
+    if (idx >= 0) {
+      pinnedLevel = idx;
+      triedLevels.add(idx);
+      hls.autoLevelEnabled = false;   // hard-disable ABR
+      if (hls.currentLevel !== idx) hls.currentLevel = idx;
+    }
+
+    // pin an audio track (prefer default/autoselect/en)
+    const tracks = (data && data.audioTracks) ? data.audioTracks : (hls.audioTracks || []);
+    if (tracks && tracks.length) {
+      let a = tracks.findIndex(t => t.default || t.autoselect);
+      if (a < 0) a = tracks.findIndex(t => (t.lang || "").toLowerCase().startsWith("en"));
+      if (a < 0) a = 0;
+      pinnedAudioTrack = a;
+      if (hls.audioTrack !== a) hls.audioTrack = a;
+    }
+
+    // keep playback plain vanilla
+    video.crossOrigin = "anonymous";
+    video.playbackRate = 1;
+    if ("preservesPitch" in video) video.preservesPitch = true;
+    if ("mozPreservesPitch" in video) video.mozPreservesPitch = true;
+
+    video.play().catch(()=>{});
   });
 
-  // error recovery
-  hls.on(Hls.Events.ERROR, (evt, data) => {
-    const { type, details, fatal } = data;
-    console.warn("HLS error", type, details, "fatal=", fatal);
-    if (!fatal) return;
+  // never allow audio track drift
+  hls.on(Hls.Events.AUDIO_TRACK_SWITCHING, () => {
+    if (pinnedAudioTrack != null && hls.audioTrack !== pinnedAudioTrack) {
+      hls.audioTrack = pinnedAudioTrack;
+    }
+  });
 
+  // never allow level drift
+  hls.on(Hls.Events.LEVEL_SWITCHED, (_e, d) => {
+    if (pinnedLevel != null && d.level !== pinnedLevel) {
+      hls.autoLevelEnabled = false;
+      hls.currentLevel = pinnedLevel;
+    }
+  });
+
+  // targeted error handling: if audio parsing/demux glitches, fail over to another single level
+  function failoverLevel() {
+    const levels = hls.levels || [];
+    if (!levels.length) return false;
+    // try next best near current pinned
+    for (let step = 1; step <= levels.length; step++) {
+      const up = (pinnedLevel + step) % levels.length;
+      if (!triedLevels.has(up)) {
+        pinnedLevel = up;
+        triedLevels.add(up);
+        hls.autoLevelEnabled = false;
+        hls.currentLevel = up;
+        // re-assert audio pin shortly after
+        if (pinnedAudioTrack != null) {
+          setTimeout(() => { hls.audioTrack = pinnedAudioTrack; }, 250);
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  hls.on(Hls.Events.ERROR, (_evt, data) => {
+    const { type, details, fatal } = data || {};
+    console.warn("[HLS ERROR]", type, details, "fatal=", fatal);
+
+    // audio-related non-fatal issues → try level failover
+    if (!fatal) {
+      if (
+        details === Hls.ErrorDetails.AUDIO_PARSING_ERROR ||
+        details === Hls.ErrorDetails.AUDIO_TRACK_LOAD_ERROR ||
+        details === Hls.ErrorDetails.AUDIO_TRACK_LOAD_TIMEOUT ||
+        details === Hls.ErrorDetails.BUFFER_APPEND_ERROR ||
+        details === Hls.ErrorDetails.BUFFER_APPENDING_ERROR
+      ) {
+        if (!failoverLevel()) {
+          // as a last resort try media recover
+          hls.recoverMediaError();
+          if (pinnedAudioTrack != null) {
+            setTimeout(() => { hls.audioTrack = pinnedAudioTrack; }, 250);
+          }
+        }
+      }
+      return;
+    }
+
+    // fatal
     switch (type) {
       case Hls.ErrorTypes.NETWORK_ERROR:
         hls.startLoad();
         break;
       case Hls.ErrorTypes.MEDIA_ERROR:
         hls.recoverMediaError();
+        if (pinnedAudioTrack != null) {
+          setTimeout(() => { hls.audioTrack = pinnedAudioTrack; }, 250);
+        }
         break;
       default:
-        hls.destroy();
+        try { hls.destroy(); } catch {}
+        setTimeout(() => playM3u8(video, url, art), 300);
     }
   });
 
-  art.once("destroy", () => hls.destroy());
+  // no forward nudges; they tend to break AAC
+  hls.on(Hls.Events.BUFFER_STALLED, () => {
+    if (!video.seeking) {
+      const t = video.currentTime;
+      video.currentTime = Math.max(0, t - 0.05); // gentle back seek only
+    }
+  });
+
+  art.once("destroy", () => { try { hls.destroy(); } catch {} });
 }
+
