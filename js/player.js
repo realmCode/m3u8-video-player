@@ -7,8 +7,8 @@ $(document).ready(function () {
   const subtitleUrl = params.get("subtitle_url");
 
   if (!videoUrl) {
-      $(".player").html("No video URL found in the URL hash. Append #video_url=YOUR_URL to the current URL.");
-      return;
+    $(".player").html("No video URL found in the URL hash. Append #video_url=YOUR_URL to the current URL.");
+    return;
   }
 
   // wrap the async work in an IIFE
@@ -200,12 +200,12 @@ async function playVideo(videoUrl, subtitles) {
     customType: { m3u8: playM3u8 },
     plugins: [
       // artplayerPluginControl(),
-      artplayerPluginHlsControl({
-        control: true,
-        setting: false,
-        title: "Quality",
-        auto: "Auto",
-      }),
+      // artplayerPluginHlsControl({
+      //   control: true,
+      //   setting: false,
+      //   title: "Quality",
+      //   auto: "Auto",
+      // }),
     ],
     settings: [subtitleSetting],
     layers: [
@@ -266,172 +266,166 @@ async function playVideo(videoUrl, subtitles) {
     art.play();
   });
 }
+// ---- tiny helpers (fast backoff + timeout fetch) ----
+function backoffDelay(attempt, base = 180, cap = 1800) {
+  // ~180, 360, 720, 1080, 1440, 1800, 1800ms (+ jitter)
+  const exp = Math.min(cap, base * Math.pow(2, attempt - 1));
+  return Math.min(cap, Math.round(exp + Math.random() * 120));
+}
 
+async function fetchWithTimeout(url, ms = 6000, opts = {}) {
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), ms);
+  try {
+    const r = await fetch(url, { cache: "no-store", ...opts, signal: ac.signal });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+// Only used for the MANIFEST (not segments)
+async function ensureManifest(url, maxTries = 7) {
+  let attempt = 1;
+  while (true) {
+    try {
+      // Many CDNs don't like HEAD for m3u8 — use GET but don't keep the body
+      const r = await fetchWithTimeout(url, 6000, { method: "GET" });
+      // optionally sanity-check the content-type if you want:
+      // const ct = (r.headers.get("content-type") || "").toLowerCase();
+      // if (!ct.includes("mpegurl") && !ct.includes("vnd.apple.mpegurl")) throw new Error("Not an m3u8");
+      return; // success
+    } catch (e) {
+      if (attempt++ >= maxTries) throw e;
+      await new Promise(res => setTimeout(res, backoffDelay(attempt - 1)));
+    }
+  }
+}
+
+// ---- manifest-focused player ----
 function playM3u8(video, url, art) {
-  // Native HLS (Safari / iOS)
+  const MAX_TRIES = 7;
+
+  // Safari / iOS native path — retry only the manifest load
   if (!window.Hls || !Hls.isSupported()) {
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
+    let attempt = 1;
+
+    const loadNative = async () => {
+      try {
+        await ensureManifest(url, MAX_TRIES - (attempt - 1));
+      } catch (e) {
+        // exhausted retries
+        art.notice.show = "Failed to load playlist.";
+        return;
+      }
+
+      video.src = url;
       video.crossOrigin = "anonymous";
-      video.playbackRate = 1;
       if ("preservesPitch" in video) video.preservesPitch = true;
       if ("mozPreservesPitch" in video) video.mozPreservesPitch = true;
-      video.src = url;
-      video.addEventListener("loadedmetadata", () => video.play().catch(()=>{}));
-    } else {
-      art.notice.show = "Unsupported playback format: m3u8";
-    }
+      video.playbackRate = 1;
+
+      const onErr = async () => {
+        if (attempt >= MAX_TRIES) {
+          art.notice.show = "Failed to load playlist.";
+          return;
+        }
+        attempt++;
+        await new Promise(res => setTimeout(res, backoffDelay(attempt - 1)));
+        loadNative();
+      };
+
+      video.addEventListener("loadedmetadata", () => {
+        video.play().catch(() => {});
+      }, { once: true });
+
+      video.addEventListener("error", onErr, { once: true });
+    };
+
+    loadNative();
     return;
   }
 
-  const hls = new Hls({
-    enableWorker: true,
-    lowLatencyMode: false,         // keep it stable
-    backBufferLength: 30,
-    // sane buffers (don’t make tiny holes)
-    maxBufferLength: 30,
-    maxMaxBufferLength: 120,
-    maxBufferSize: 60 * 1000 * 1000,
-    // retries
-    fragLoadingTimeOut: 20000,
-    fragLoadingMaxRetry: 6,
-    fragLoadingRetryDelay: 1000,
-    fragLoadingMaxRetryTimeout: 64000,
-    capLevelToPlayerSize: true,
-  });
+  // Hls.js path — preflight the manifest, then init Hls
+  let hls = null;
+  let attemptsUsed = 0;
 
-  art.hls = hls;
-  hls.attachMedia(video);
-  hls.loadSource(url);
+  const destroyHls = () => { try { hls && hls.destroy(); } catch {} hls = null; };
 
-  // pin state
-  let pinnedAudioTrack = null;
-  let pinnedLevel = null;       // index into hls.levels
-  let triedLevels = new Set();
+  const boot = async () => {
+    // Preflight only cares about the manifest
+    await ensureManifest(url, Math.max(1, MAX_TRIES - attemptsUsed));
+    // init hls AFTER manifest is reachable
+    destroyHls();
+    hls = new Hls({
+      // keep segment retries default; we're only focusing on manifest here
+      manifestLoadMaxRetry: 0, // disable internal loop; we handle it outside
+      // timeouts still help avoid hangs
+      manifestLoadingTimeOut: 8000,
+      enableWorker: true,
+      lowLatencyMode: false,
+      backBufferLength: 90,
+    });
 
-  // choose a stable audio track and a single good level, then disable ABR
-  hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
-    const levels = hls.levels || [];
-    // pick a “good” level:
-    // 1) prefer one that advertises an AAC codec (e.g., mp4a.40.2)
-    // 2) else pick median bitrate to avoid extremes
-    let idx = -1;
-    for (let i = 0; i < levels.length; i++) {
-      const ac = (levels[i].audioCodec || "").toLowerCase();
-      if (ac.includes("mp4a")) { idx = i; break; }
-    }
-    if (idx === -1 && levels.length) idx = Math.floor(levels.length / 2);
-    if (idx >= 0) {
-      pinnedLevel = idx;
-      triedLevels.add(idx);
-      hls.autoLevelEnabled = false;   // hard-disable ABR
-      if (hls.currentLevel !== idx) hls.currentLevel = idx;
-    }
+    hls.attachMedia(video);
+    hls.loadSource(url);
 
-    // pin an audio track (prefer default/autoselect/en)
-    const tracks = (data && data.audioTracks) ? data.audioTracks : (hls.audioTracks || []);
-    if (tracks && tracks.length) {
-      let a = tracks.findIndex(t => t.default || t.autoselect);
-      if (a < 0) a = tracks.findIndex(t => (t.lang || "").toLowerCase().startsWith("en"));
-      if (a < 0) a = 0;
-      pinnedAudioTrack = a;
-      if (hls.audioTrack !== a) hls.audioTrack = a;
-    }
+    // start playback once parsed
+    hls.once(Hls.Events.MANIFEST_PARSED, () => {
+      // pitch
+      video.playbackRate = 1;
+      video.defaultPlaybackRate = 1;
+      if ("preservesPitch" in video) video.preservesPitch = true;
+      if ("mozPreservesPitch" in video) video.mozPreservesPitch = true;
+      if ("webkitPreservesPitch" in video) video.webkitPreservesPitch = true;
+      video.play().catch(() => {});
+    });
 
-    // keep playback plain vanilla
-    video.crossOrigin = "anonymous";
-    video.playbackRate = 1;
-    if ("preservesPitch" in video) video.preservesPitch = true;
-    if ("mozPreservesPitch" in video) video.mozPreservesPitch = true;
+    // if later the manifest fails (timeout/404/etc.), retry ONLY the manifest
+    hls.on(Hls.Events.ERROR, async (_, data) => {
+      if (!data || data.type !== Hls.ErrorTypes.NETWORK_ERROR) return;
 
-    video.play().catch(()=>{});
-  });
+      const d = data.details;
+      const isManifestIssue =
+        d === Hls.ErrorDetails.MANIFEST_LOAD_ERROR ||
+        d === Hls.ErrorDetails.MANIFEST_LOAD_TIMEOUT ||
+        d === Hls.ErrorDetails.MANIFEST_PARSING_ERROR;
 
-  // never allow audio track drift
-  hls.on(Hls.Events.AUDIO_TRACK_SWITCHING, () => {
-    if (pinnedAudioTrack != null && hls.audioTrack !== pinnedAudioTrack) {
-      hls.audioTrack = pinnedAudioTrack;
-    }
-  });
+      if (!isManifestIssue) return;
 
-  // never allow level drift
-  hls.on(Hls.Events.LEVEL_SWITCHED, (_e, d) => {
-    if (pinnedLevel != null && d.level !== pinnedLevel) {
-      hls.autoLevelEnabled = false;
-      hls.currentLevel = pinnedLevel;
-    }
-  });
-
-  // targeted error handling: if audio parsing/demux glitches, fail over to another single level
-  function failoverLevel() {
-    const levels = hls.levels || [];
-    if (!levels.length) return false;
-    // try next best near current pinned
-    for (let step = 1; step <= levels.length; step++) {
-      const up = (pinnedLevel + step) % levels.length;
-      if (!triedLevels.has(up)) {
-        pinnedLevel = up;
-        triedLevels.add(up);
-        hls.autoLevelEnabled = false;
-        hls.currentLevel = up;
-        // re-assert audio pin shortly after
-        if (pinnedAudioTrack != null) {
-          setTimeout(() => { hls.audioTrack = pinnedAudioTrack; }, 250);
-        }
-        return true;
+      attemptsUsed++;
+      if (attemptsUsed >= MAX_TRIES) {
+        art.notice.show = "Failed to load playlist.";
+        return;
       }
-    }
-    return false;
-  }
 
-  hls.on(Hls.Events.ERROR, (_evt, data) => {
-    const { type, details, fatal } = data || {};
-    console.warn("[HLS ERROR]", type, details, "fatal=", fatal);
-
-    // audio-related non-fatal issues → try level failover
-    if (!fatal) {
-      if (
-        details === Hls.ErrorDetails.AUDIO_PARSING_ERROR ||
-        details === Hls.ErrorDetails.AUDIO_TRACK_LOAD_ERROR ||
-        details === Hls.ErrorDetails.AUDIO_TRACK_LOAD_TIMEOUT ||
-        details === Hls.ErrorDetails.BUFFER_APPEND_ERROR ||
-        details === Hls.ErrorDetails.BUFFER_APPENDING_ERROR
-      ) {
-        if (!failoverLevel()) {
-          // as a last resort try media recover
-          hls.recoverMediaError();
-          if (pinnedAudioTrack != null) {
-            setTimeout(() => { hls.audioTrack = pinnedAudioTrack; }, 250);
-          }
-        }
-      }
-      return;
-    }
-
-    // fatal
-    switch (type) {
-      case Hls.ErrorTypes.NETWORK_ERROR:
+      // quick backoff, then re-ensure manifest and reload source
+      await new Promise(res => setTimeout(res, backoffDelay(attemptsUsed)));
+      try {
+        await ensureManifest(url, Math.max(1, MAX_TRIES - attemptsUsed));
+        // reload without tearing everything down aggressively
+        hls.stopLoad();
+        hls.loadSource(url);
         hls.startLoad();
-        break;
-      case Hls.ErrorTypes.MEDIA_ERROR:
-        hls.recoverMediaError();
-        if (pinnedAudioTrack != null) {
-          setTimeout(() => { hls.audioTrack = pinnedAudioTrack; }, 250);
-        }
-        break;
-      default:
-        try { hls.destroy(); } catch {}
-        setTimeout(() => playM3u8(video, url, art), 300);
-    }
-  });
+      } catch {
+        // if ensureManifest failed, escalate by rebuilding the instance
+        await new Promise(res => setTimeout(res, backoffDelay(attemptsUsed)));
+        try { await ensureManifest(url, Math.max(1, MAX_TRIES - attemptsUsed)); } catch {}
+        destroyHls();
+        boot();
+      }
+    });
+  };
 
-  // no forward nudges; they tend to break AAC
-  hls.on(Hls.Events.BUFFER_STALLED, () => {
-    if (!video.seeking) {
-      const t = video.currentTime;
-      video.currentTime = Math.max(0, t - 0.05); // gentle back seek only
-    }
-  });
+  art.once("destroy", destroyHls);
 
-  art.once("destroy", () => { try { hls.destroy(); } catch {} });
+  // kick off
+  (async () => {
+    try {
+      await boot();
+    } catch (e) {
+      art.notice.show = "Failed to load playlist.";
+    }
+  })();
 }
-
