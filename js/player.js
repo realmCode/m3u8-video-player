@@ -168,6 +168,7 @@ async function playVideo(videoUrl, subtitles) {
   art = new Artplayer({
     container: ".player",
     url: videoUrl,
+    type: 'm3u8', 
     title: "m3u8 player",
     isLive: false,
     muted: false,
